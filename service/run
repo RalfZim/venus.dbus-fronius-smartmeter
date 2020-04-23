@@ -1,0 +1,3 @@
+#!/bin/sh
+python /data/dbus-fronius-smartmeter/dbus-fronius-smartmeter.py
+
