@@ -15,11 +15,13 @@ In the Python file, you should put the IP of your Fronius device that hosts the 
 1. Copy the files to the /data folder on your venus:
 
    - /data/dbus-fronius-smartmeter/dbus-fronius-smartmeter.py
+   - /data/dbus-fronius-smartmeter/kill_me.sh
    - /data/dbus-fronius-smartmeter/service/run
 
-2. Set permissions for the run file:
+2. Set permissions for files:
 
    `chmod 755 /data/dbus-fronius-smartmeter/service/run`
+   `chmod 744 /data/dbus-fronius-smartmeter/kill_me.sh`
 
 3. Get two files from the [velib_python](https://github.com/victronenergy/velib_python) and install them on your venus:
 
@@ -60,6 +62,14 @@ If the script stops with the message
 `dbus.exceptions.NameExistsException: Bus name already exists: com.victronenergy.grid"`
 
 it means that the service is still running or another service is using that bus name.
+
+#### Restart the script
+
+If you want to restart the script, for example after changing it, just run the following command:
+
+`/data/dbus-fronius-smartmeter/kill_me.sh`
+
+The daemon-tools will restart the scriptwithin a few seconds.
 
 ### Hardware
 
