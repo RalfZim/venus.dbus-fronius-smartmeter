@@ -17,12 +17,16 @@ In the Python file, you should put the IP of your Fronius device that hosts the 
    - /data/dbus-fronius-smartmeter/dbus-fronius-smartmeter.py
    - /data/dbus-fronius-smartmeter/service/run
 
-2. Get two files from the [velib_python](https://github.com/victronenergy/velib_python) and install them on your venus:
+2. Set permissions for the run file:
+
+   `chmod 755 /data/dbus-fronius-smartmeter/service/run`
+
+3. Get two files from the [velib_python](https://github.com/victronenergy/velib_python) and install them on your venus:
 
    - /data/dbus-fronius-smartmeter/vedbus.py
    - /data/dbus-fronius-smartmeter/ve_utils.py
 
-3. Add a symlink to the file /data/rc.local:
+4. Add a symlink to the file /data/rc.local:
 
    `ln -s /data/dbus-fronius-smartmeter/service /service/dbus-fronius-smartmeter`
 
@@ -57,4 +61,13 @@ If the script stops with the message
 
 it means that the service is still running or another service is using that bus name.
 
+### Hardware
+
+In my installation at home, I am using the following Hardware:
+
+- Fronius Symo - PV Grid Tied Inverter (three phases)
+- Fronius Smart Meter 63A-3 - (three phases)
+- Victron MultiPlus-II - Battery Inverter (single phase)
+- Raspberry Pi 3B+ - For running Venus OS
+- Pylontech US2000 Plus - LiFePO Battery
 
