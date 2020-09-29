@@ -21,6 +21,7 @@ In the Python file, you should put the IP of your Fronius device that hosts the 
 2. Set permissions for files:
 
    `chmod 755 /data/dbus-fronius-smartmeter/service/run`
+
    `chmod 744 /data/dbus-fronius-smartmeter/kill_me.sh`
 
 3. Get two files from the [velib_python](https://github.com/victronenergy/velib_python) and install them on your venus:
