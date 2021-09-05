@@ -42,11 +42,20 @@ class DbusDummyService:
       self._dbusservice.add_path(
         path, settings['initial'], writeable=True, onchangecallback=self._handlechangedvalue)
 
-    gobject.timeout_add(200, self._update) # pause 200ms before the next request
+    # The Datamanager updates data every second. No need to request more than twice a second
+    # to get current data.
+    gobject.timeout_add(500, self._safe_update) # pause 500ms before the next request
 
+  def _safe_update(self):
+    try:
+      self._update()
+    except Exception as e:
+      logging.error("Failure updating %s" % e)
+    return True
+  
   def _update(self):
     URL = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
-    meter_r = requests.get(url = URL)
+    meter_r = requests.get(url = URL, timeout = 5) # Usually sub second, prevent hang
     meter_data = meter_r.json() 
     MeterConsumption = meter_data['Body']['Data']['PowerReal_P_Sum']
     self._dbusservice['/Ac/Power'] = MeterConsumption # positive: consumption, negative: feed into grid
