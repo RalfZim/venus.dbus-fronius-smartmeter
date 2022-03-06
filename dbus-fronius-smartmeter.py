@@ -6,13 +6,13 @@ This code and its documentation can be found on: https://github.com/RalfZim/venu
 Used https://github.com/victronenergy/velib_python/blob/master/dbusdummyservice.py as basis for this service.
 Reading information from the Fronius Smart Meter via http REST API and puts the info on dbus.
 """
-import gobject
+from gi.repository import GLib
 import platform
 import logging
 import sys
 import os
 import requests # for http GET
-import thread   # for daemon = True
+import _thread as thread  # for daemon = True
 
 # our own packages
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../ext/velib_python'))
@@ -32,20 +32,20 @@ class DbusDummyService:
 
     # Create the mandatory objects
     self._dbusservice.add_path('/DeviceInstance', deviceinstance)
-    self._dbusservice.add_path('/ProductId', 16) # value used in ac_sensor_bridge.cpp of dbus-cgwacs
+    self._dbusservice.add_path('/ProductId', 45069) # value used in ac_sensor_bridge.cpp of dbus-cgwacs
     self._dbusservice.add_path('/ProductName', productname)
     self._dbusservice.add_path('/FirmwareVersion', 0.1)
     self._dbusservice.add_path('/HardwareVersion', 0)
     self._dbusservice.add_path('/Connected', 1)
 
-    for path, settings in self._paths.iteritems():
+    for path, settings in self._paths.items():
       self._dbusservice.add_path(
         path, settings['initial'], writeable=True, onchangecallback=self._handlechangedvalue)
 
-    gobject.timeout_add(200, self._update) # pause 200ms before the next request
+    GLib.timeout_add(200, self._update) # pause 200ms before the next request
 
   def _update(self):
-    URL = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
+    URL = "http://192.168.21.176/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=1&DataCollection=MeterRealtimeData"
     meter_r = requests.get(url = URL)
     meter_data = meter_r.json() 
     MeterConsumption = meter_data['Body']['Data']['PowerReal_P_Sum']
@@ -77,7 +77,7 @@ def main():
   DBusGMainLoop(set_as_default=True)
 
   pvac_output = DbusDummyService(
-    servicename='com.victronenergy.grid',
+    servicename='com.victronenergy.grid.cgwacs_ttyUSB0_mb1',
     deviceinstance=0,
     paths={
       '/Ac/Power': {'initial': 0},
@@ -94,8 +94,8 @@ def main():
       '/Ac/Energy/Reverse': {'initial': 0}, # energy sold to the grid
     })
 
-  logging.info('Connected to dbus, and switching over to gobject.MainLoop() (= event based)')
-  mainloop = gobject.MainLoop()
+  logging.info('Connected to dbus, and switching over to GLib.MainLoop() (= event based)')
+  mainloop = GLib.MainLoop()
   mainloop.run()
 
 if __name__ == "__main__":
