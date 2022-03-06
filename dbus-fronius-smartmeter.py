@@ -59,8 +59,8 @@ class DbusDummyService:
     self._dbusservice['/Ac/L1/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_1']
     self._dbusservice['/Ac/L2/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_2']
     self._dbusservice['/Ac/L3/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_3']
-    self._dbusservice['/Ac/Energy/Forward'] = meter_data['Body']['Data']['EnergyReal_WAC_Sum_Consumed']
-    self._dbusservice['/Ac/Energy/Reverse'] = meter_data['Body']['Data']['EnergyReal_WAC_Sum_Produced']
+    self._dbusservice['/Ac/Energy/Forward'] = meter_data['Body']['Data']['EnergyReal_WAC_Sum_Consumed']/1000
+    self._dbusservice['/Ac/Energy/Reverse'] = meter_data['Body']['Data']['EnergyReal_WAC_Sum_Produced']/1000
     logging.info("House Consumption: %s" % (MeterConsumption))
     return True
 
