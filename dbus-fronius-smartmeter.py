@@ -6,17 +6,26 @@ This code and its documentation can be found on: https://github.com/RalfZim/venu
 Used https://github.com/victronenergy/velib_python/blob/master/dbusdummyservice.py as basis for this service.
 Reading information from the Fronius Smart Meter via http REST API and puts the info on dbus.
 """
-import gobject
+try:
+  import gobject  # Python 2.x
+except:
+  from gi.repository import GLib as gobject # Python 3.x
 import platform
 import logging
 import sys
 import os
 import requests # for http GET
-import thread   # for daemon = True
+try:
+  import thread   # for daemon = True  / Python 2.x
+except:
+  import _thread as thread   # for daemon = True  / Python 3.x
 
 # our own packages
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), '../ext/velib_python'))
 from vedbus import VeDbusService
+
+path_UpdateIndex = '/UpdateIndex'
+
 
 class DbusDummyService:
   def __init__(self, servicename, deviceinstance, paths, productname='Fronius Smart Meter', connection='Fronius Smart Meter service'):
@@ -38,18 +47,19 @@ class DbusDummyService:
     self._dbusservice.add_path('/HardwareVersion', 0)
     self._dbusservice.add_path('/Connected', 1)
 
-    for path, settings in self._paths.iteritems():
+    for path, settings in self._paths.items():
       self._dbusservice.add_path(
         path, settings['initial'], writeable=True, onchangecallback=self._handlechangedvalue)
 
     gobject.timeout_add(200, self._update) # pause 200ms before the next request
 
   def _update(self):
-    URL = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
-    meter_r = requests.get(url = URL)
-    meter_data = meter_r.json() 
-    MeterConsumption = meter_data['Body']['Data']['PowerReal_P_Sum']
-    self._dbusservice['/Ac/Power'] = MeterConsumption # positive: consumption, negative: feed into grid
+    meter_url = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?"\
+                "Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
+    meter_r = requests.get(url=meter_url) # request data from the Fronius PV inverter
+    meter_data = meter_r.json() # convert JSON data
+    meter_consumption = meter_data['Body']['Data']['PowerReal_P_Sum']
+    self._dbusservice['/Ac/Power'] = meter_consumption # positive: consumption, negative: feed into grid
     self._dbusservice['/Ac/L1/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_1']
     self._dbusservice['/Ac/L2/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_2']
     self._dbusservice['/Ac/L3/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_3']
@@ -61,7 +71,12 @@ class DbusDummyService:
     self._dbusservice['/Ac/L3/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_3']
     self._dbusservice['/Ac/Energy/Forward'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Consumed'])/1000
     self._dbusservice['/Ac/Energy/Reverse'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Produced'])/1000
-    logging.info("House Consumption: %s" % (MeterConsumption))
+    logging.info("House Consumption: {:.0f}".format(meter_consumption))
+    # increment UpdateIndex - to show that new data is available
+    index = self._dbusservice[path_UpdateIndex] + 1  # increment index
+    if index > 255:   # maximum value of the index
+      index = 0       # overflow from 255 to 0
+    self._dbusservice[path_UpdateIndex] = index
     return True
 
   def _handlechangedvalue(self, path, value):
@@ -69,7 +84,7 @@ class DbusDummyService:
     return True # accept the change
 
 def main():
-  logging.basicConfig(level=logging.INFO)
+  logging.basicConfig(level=logging.DEBUG) # use .INFO for less logging
   thread.daemon = True # allow the program to quit
 
   from dbus.mainloop.glib import DBusGMainLoop
@@ -92,6 +107,7 @@ def main():
       '/Ac/L3/Power': {'initial': 0},
       '/Ac/Energy/Forward': {'initial': 0}, # energy bought from the grid
       '/Ac/Energy/Reverse': {'initial': 0}, # energy sold to the grid
+      path_UpdateIndex: {'initial': 0},
     })
 
   logging.info('Connected to dbus, and switching over to gobject.MainLoop() (= event based)')
