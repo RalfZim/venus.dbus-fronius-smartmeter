@@ -6,6 +6,9 @@ This Script/Project was forked from RalfZim/venus.dbus-fronius-smartmeter.
 I removed the request area and added an MQTT subscriber / client.
 You have to run Paho Client on your GXDevice to make this script work
 
+python -m ensurepip --upgrade
+pip install paho-mqtt
+
 
 ### Purpose
 
@@ -89,3 +92,4 @@ In my installation at home, I am using the following Hardware:
 - CerboGX
 - Tasmota MQTT (modified to send every 3 seconds)
 
+### Star this Project if you like it. If you need help start an issue :)
