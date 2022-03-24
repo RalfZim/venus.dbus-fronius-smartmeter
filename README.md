@@ -1,5 +1,12 @@
 # dbus-MQTT to Grid Meter Service
 
+### Disclaimer
+
+This Script/Project was forked from RalfZim/venus.dbus-fronius-smartmeter. 
+I removed the request area and added an MQTT subscriber / client.
+You have to run Paho Client on your GXDevice to make this script work
+
+
 ### Purpose
 
 The Python script cyclically reads data from a MQTT Broker and publishes information on the dbus, using the service name com.victronenergy.grid. This makes the Venus OS work as if you had a physical Victron Grid Meter installed.
