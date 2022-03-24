@@ -54,24 +54,36 @@ class DbusDummyService:
     gobject.timeout_add(200, self._update) # pause 200ms before the next request
 
   def _update(self):
-    meter_url = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?"\
-                "Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
-    meter_r = requests.get(url=meter_url) # request data from the Fronius PV inverter
-    meter_data = meter_r.json() # convert JSON data
-    meter_consumption = meter_data['Body']['Data']['PowerReal_P_Sum']
-    self._dbusservice['/Ac/Power'] = meter_consumption # positive: consumption, negative: feed into grid
-    self._dbusservice['/Ac/L1/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_1']
-    self._dbusservice['/Ac/L2/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_2']
-    self._dbusservice['/Ac/L3/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_3']
-    self._dbusservice['/Ac/L1/Current'] = meter_data['Body']['Data']['Current_AC_Phase_1']
-    self._dbusservice['/Ac/L2/Current'] = meter_data['Body']['Data']['Current_AC_Phase_2']
-    self._dbusservice['/Ac/L3/Current'] = meter_data['Body']['Data']['Current_AC_Phase_3']
-    self._dbusservice['/Ac/L1/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_1']
-    self._dbusservice['/Ac/L2/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_2']
-    self._dbusservice['/Ac/L3/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_3']
-    self._dbusservice['/Ac/Energy/Forward'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Consumed'])/1000
-    self._dbusservice['/Ac/Energy/Reverse'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Produced'])/1000
-    logging.info("House Consumption: {:.0f}".format(meter_consumption))
+    try:
+      meter_url = "http://10.194.65.143/solar_api/v1/GetMeterRealtimeData.cgi?"\
+                  "Scope=Device&DeviceId=0&DataCollection=MeterRealtimeData"
+      meter_r = requests.get(url=meter_url) # request data from the Fronius PV inverter
+      meter_data = meter_r.json() # convert JSON data
+      meter_consumption = meter_data['Body']['Data']['PowerReal_P_Sum']
+      meter_model = meter_data['Body']['Data']['Details']['Model']
+      if meter_model == 'Smart Meter 63A-1':  # set values for single phase meter
+        meter_data['Body']['Data']['Voltage_AC_Phase_2'] = 0
+        meter_data['Body']['Data']['Voltage_AC_Phase_3'] = 0
+        meter_data['Body']['Data']['Current_AC_Phase_2'] = 0
+        meter_data['Body']['Data']['Current_AC_Phase_3'] = 0
+        meter_data['Body']['Data']['PowerReal_P_Phase_2'] = 0
+        meter_data['Body']['Data']['PowerReal_P_Phase_3'] = 0
+      self._dbusservice['/Ac/Power'] = meter_consumption # positive: consumption, negative: feed into grid
+      self._dbusservice['/Ac/L1/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_1']
+      self._dbusservice['/Ac/L2/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_2']
+      self._dbusservice['/Ac/L3/Voltage'] = meter_data['Body']['Data']['Voltage_AC_Phase_3']
+      self._dbusservice['/Ac/L1/Current'] = meter_data['Body']['Data']['Current_AC_Phase_1']
+      self._dbusservice['/Ac/L2/Current'] = meter_data['Body']['Data']['Current_AC_Phase_2']
+      self._dbusservice['/Ac/L3/Current'] = meter_data['Body']['Data']['Current_AC_Phase_3']
+      self._dbusservice['/Ac/L1/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_1']
+      self._dbusservice['/Ac/L2/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_2']
+      self._dbusservice['/Ac/L3/Power'] = meter_data['Body']['Data']['PowerReal_P_Phase_3']
+      self._dbusservice['/Ac/Energy/Forward'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Consumed'])/1000
+      self._dbusservice['/Ac/Energy/Reverse'] = float(meter_data['Body']['Data']['EnergyReal_WAC_Sum_Produced'])/1000
+      logging.info("House Consumption: {:.0f}".format(meter_consumption))
+    except:
+      logging.info("WARNING: Could not read from Fronius PV inverter")
+      self._dbusservice['/Ac/Power'] = 0  # TODO: any better idea to signal an issue?
     # increment UpdateIndex - to show that new data is available
     index = self._dbusservice[path_UpdateIndex] + 1  # increment index
     if index > 255:   # maximum value of the index
