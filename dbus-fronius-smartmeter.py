@@ -104,7 +104,7 @@ def main():
   DBusGMainLoop(set_as_default=True)
 
   pvac_output = DbusDummyService(
-    servicename='com.victronenergy.grid',
+    servicename='com.victronenergy.grid.mymeter',
     deviceinstance=0,
     paths={
       '/Ac/Power': {'initial': 0},
