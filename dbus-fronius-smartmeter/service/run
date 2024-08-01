@@ -1,0 +1,5 @@
+#!/bin/sh
+echo "*** starting dbus-fronius-smartmeter ***"
+exec 2>&1
+python /data/etc/dbus-fronius-smartmeter/dbus-fronius-smartmeter.py
+
